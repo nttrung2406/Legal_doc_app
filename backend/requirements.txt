@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-jose
+python-multipart
+python-keycloak
+requests
+pydantic
+python-dotenv
+pymupdf
+paddleocr
+psycopg2-binary
+minio
+numpy
+sentence-transformers
+langchain

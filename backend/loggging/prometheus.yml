@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'fastapi-services'
+    static_configs:
+      - targets: ['auth-service:8000', 'document-service:8001', 'rag-service:8002'] 
