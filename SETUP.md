@@ -30,7 +30,7 @@ docker run -p 8080:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin
 1. Start PostgreSQL with pgvector:
 ```bash
 cd backend/db
-docker-compose up -d
+docker compose up -d
 ```
 
 2. Create database schema:
@@ -43,7 +43,7 @@ psql -h localhost -U legalraguser -d legalrag -f schema.sql
 1. Start Minio:
 ```bash
 cd backend/db
-docker-compose up -d minio
+docker compose up -d minio
 ```
 
 2. Access Minio console at `http://localhost:9001`
@@ -125,7 +125,7 @@ npm start
 1. Start Prometheus and Grafana:
 ```bash
 cd backend/loggging
-docker-compose up -d
+docker compose up -d
 ```
 
 2. Access Grafana at `http://localhost:3000`

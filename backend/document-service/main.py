@@ -25,8 +25,8 @@ app.add_middleware(
 
 minio_client = Minio(
     os.getenv("MINIO_ENDPOINT", "localhost:9000"),
-    access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
-    secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
+    access_key=os.getenv("MINIO_ACCESS_KEY"),
+    secret_key=os.getenv("MINIO_SECRET_KEY"),
     secure=False
 )
 
@@ -37,10 +37,10 @@ ocr = PaddleOCR(use_angle_cls=True, lang='en')
 
 def get_db_connection():
     return psycopg2.connect(
-        dbname=os.getenv("POSTGRES_DB", "legalrag"),
-        user=os.getenv("POSTGRES_USER", "legalraguser"),
-        password=os.getenv("POSTGRES_PASSWORD", "secret"),
-        host=os.getenv("POSTGRES_HOST", "localhost")
+        dbname=os.getenv("POSTGRES_DB"),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD"),
+        host=os.getenv("POSTGRES_HOST")
     )
 
 @app.post("/upload")

@@ -10,7 +10,6 @@ load_dotenv()
 
 app = FastAPI()
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,11 +18,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Keycloak configuration
-KEYCLOAK_URL = os.getenv("KEYCLOAK_URL", "http://localhost:8080")
-KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "legal-rag")
-KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "legal-rag-client")
-KEYCLOAK_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET", "your-client-secret")
+KEYCLOAK_URL = os.getenv("KEYCLOAK_URL")
+KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM")
+KEYCLOAK_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
+KEYCLOAK_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET")
 
 keycloak_openid = KeycloakOpenID(
     server_url=KEYCLOAK_URL,
@@ -61,7 +59,6 @@ async def login(user: UserLogin):
 @app.post("/signup")
 async def signup(user: UserSignup):
     try:
-        # Create user in Keycloak
         user_id = keycloak_openid.create_user(
             username=user.username,
             email=user.email,
@@ -86,4 +83,3 @@ async def logout(token: str):
 def health():
     return {"status": "auth-service running"}
 
-# TODO: Integrate with Keycloak for authentication 

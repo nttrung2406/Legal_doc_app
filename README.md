@@ -42,7 +42,7 @@ A web application for analyzing legal documents using AI, featuring document sum
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/nttrung2406/Legal_doc_app.git
 cd legal-rag-app
 ```
 

@@ -29,13 +29,12 @@ model = SentenceTransformer('all-MiniLM-L6-v2')
 # Database connection
 def get_db_connection():
     return psycopg2.connect(
-        dbname=os.getenv("POSTGRES_DB", "legalrag"),
-        user=os.getenv("POSTGRES_USER", "legalraguser"),
-        password=os.getenv("POSTGRES_PASSWORD", "secret"),
-        host=os.getenv("POSTGRES_HOST", "localhost")
+        dbname=os.getenv("POSTGRES_DB"),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD"),
+        host=os.getenv("POSTGRES_HOST")
     )
 
-# Ollama configuration
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 
 class Question(BaseModel):

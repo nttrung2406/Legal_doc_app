@@ -1,22 +1,28 @@
 #!/bin/bash
 
-# Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color
+NC='\033[0m' 
 
-# Function to check if a command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Function to check if a port is in use
 port_in_use() {
     lsof -i :$1 >/dev/null 2>&1
 }
 
-# Function to start a service
+
+find_next_port() {
+    local port=$1
+    while port_in_use $port; do
+        port=$((port + 1))
+    done
+    echo $port
+}
+
+
 start_service() {
     local name=$1
     local command=$2
@@ -24,12 +30,25 @@ start_service() {
 
     echo -e "${YELLOW}Starting $name...${NC}"
     
-    if [ ! -z "$port" ] && port_in_use $port; then
-        echo -e "${RED}Port $port is already in use. $name might be already running.${NC}"
-        return 1
+    if [ ! -z "$port" ]; then
+        if port_in_use $port; then
+            if [ "$name" = "Frontend" ]; then
+                port=$(find_next_port $port)
+                echo -e "${YELLOW}Port $port is available for $name${NC}"
+            else
+                echo -e "${RED}Port $port is already in use. $name might be already running.${NC}"
+                return 1
+            fi
+        fi
     fi
 
-    # Run the command in the background
+    command=$(echo "$command" | sed 's/python /python3 /')
+    
+
+    if [ "$name" = "Frontend" ]; then
+        command="$command --port $port"
+    fi
+    
     eval "$command" &
     local pid=$!
     
@@ -37,14 +56,16 @@ start_service() {
     echo $pid > ".$name.pid"
     
     echo -e "${GREEN}$name started with PID: $pid${NC}"
+    echo $port
     return 0
 }
 
-# Function to cleanup on exit
 cleanup() {
     echo -e "\n${YELLOW}Shutting down services...${NC}"
     
-    # Kill all background processes
+    echo -e "${YELLOW}Stopping Docker services...${NC}"
+    docker compose down
+    
     for pid_file in .*.pid; do
         if [ -f "$pid_file" ]; then
             pid=$(cat "$pid_file")
@@ -58,7 +79,6 @@ cleanup() {
     exit 0
 }
 
-# Set up cleanup on script exit
 trap cleanup EXIT INT TERM
 
 # Check if required commands exist
@@ -77,6 +97,16 @@ if ! command_exists redis-server; then
     exit 1
 fi
 
+if ! command_exists docker; then
+    echo -e "${RED}Docker is not installed. Please install it first.${NC}"
+    exit 1
+fi
+
+if ! command_exists docker compose; then
+    echo -e "${RED}Docker Compose is not installed. Please install it first.${NC}"
+    exit 1
+fi
+
 # Install backend dependencies
 echo -e "${YELLOW}Installing backend dependencies...${NC}"
 pip install -r backend/requirements.txt
@@ -90,33 +120,32 @@ cd ..
 # Start Redis
 start_service "Redis" "redis-server" 6379
 
-# Start PostgreSQL
-if command_exists pg_ctl; then
-    start_service "PostgreSQL" "pg_ctl start -D /usr/local/var/postgres" 5432
-else
-    echo -e "${YELLOW}PostgreSQL not found in PATH. Please make sure it's running.${NC}"
-fi
+# Start Keycloak and PostgreSQL using Docker Compose
+echo -e "${YELLOW}Starting Keycloak and PostgreSQL...${NC}"
+docker compose up -d
 
-# Start Keycloak (if exists)
-if [ -d "keycloak" ]; then
-    start_service "Keycloak" "./keycloak/bin/standalone.sh" 8080
-else
-    echo -e "${YELLOW}Keycloak directory not found. Please make sure it's installed.${NC}"
-fi
+# Wait for services to be ready
+echo -e "${YELLOW}Waiting for services to be ready...${NC}"
+sleep 10
 
 # Start backend services
 echo -e "${YELLOW}Starting backend services...${NC}"
 cd backend
-start_service "Backend" "python run.py" 8000
+start_service "Backend" "python3 run.py" 8000
 cd ..
 
 # Start frontend
 echo -e "${YELLOW}Starting frontend...${NC}"
 cd frontend
-start_service "Frontend" "npm start" 3000
+FRONTEND_PORT=$(start_service "Frontend" "npm start" 3000)
 cd ..
 
 echo -e "${GREEN}All services started!${NC}"
 echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
 
-read -p "Press Enter to stop all services..." 
+echo -e "\n${GREEN}Service Links:${NC}"
+echo -e "${YELLOW}Frontend:${NC} http://localhost:$FRONTEND_PORT"
+echo -e "${YELLOW}Backend API:${NC} http://localhost:8000"
+echo -e "${YELLOW}Keycloak:${NC} http://localhost:8080"
+echo -e "${YELLOW}Prometheus:${NC} http://localhost:9090"
+echo -e "${YELLOW}Grafana:${NC} http://localhost:3001"

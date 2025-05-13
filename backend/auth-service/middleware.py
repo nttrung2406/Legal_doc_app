@@ -11,22 +11,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Redis configuration
 redis_client = redis.Redis(
-    host=os.getenv("REDIS_HOST", "localhost"),
-    port=int(os.getenv("REDIS_PORT", 6379)),
+    host=os.getenv("REDIS_HOST"),
+    port=int(os.getenv("REDIS_PORT")),
     db=0
 )
 
-# Rate limiting configuration
 RATE_LIMIT = 100  # requests per minute
 RATE_WINDOW = 60  # seconds
 
-# In-memory rate limiting (fallback if Redis is not available)
 request_counts = defaultdict(list)
 
 class RateLimitExceeded(Exception):
@@ -37,7 +34,6 @@ def check_rate_limit(request: Request):
     current_time = datetime.now()
     
     try:
-        # Try Redis first
         key = f"rate_limit:{client_ip}"
         current = redis_client.get(key)
         
@@ -48,9 +44,7 @@ def check_rate_limit(request: Request):
         else:
             redis_client.incr(key)
     except redis.RedisError:
-        # Fallback to in-memory rate limiting
         if client_ip in request_counts:
-            # Remove old requests
             request_counts[client_ip] = [
                 t for t in request_counts[client_ip]
                 if current_time - t < timedelta(seconds=RATE_WINDOW)
@@ -65,7 +59,6 @@ def check_rate_limit(request: Request):
 
 async def error_handler_middleware(request: Request, call_next: Callable):
     try:
-        # Check rate limit
         check_rate_limit(request)
         
         return await call_next(request)
@@ -87,22 +80,18 @@ async def error_handler_middleware(request: Request, call_next: Callable):
             content={"detail": "Internal server error"}
         )
 
-def cache_response(expire_time: int = 300):  # 5 minutes default
+def cache_response(expire_time: int = 300):  
     def decorator(func):
         async def wrapper(*args, **kwargs):
-            # Generate cache key from function arguments
             cache_key = f"{func.__name__}:{str(args)}:{str(kwargs)}"
             
             try:
-                # Try to get from cache
                 cached_result = redis_client.get(cache_key)
                 if cached_result:
                     return JSONResponse(content=cached_result)
                 
-                # If not in cache, execute function
                 result = await func(*args, **kwargs)
                 
-                # Cache the result
                 redis_client.setex(
                     cache_key,
                     expire_time,
@@ -111,7 +100,6 @@ def cache_response(expire_time: int = 300):  # 5 minutes default
                 
                 return result
             except redis.RedisError:
-                # If Redis fails, just execute the function
                 return await func(*args, **kwargs)
         
         return wrapper
@@ -123,7 +111,6 @@ def validate_token(token: str) -> bool:
         raise HTTPException(status_code=401, detail="No token provided")
     
     try:
-        # Add your token validation logic here
         return True
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid token")
