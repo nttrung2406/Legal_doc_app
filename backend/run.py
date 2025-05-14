@@ -9,7 +9,6 @@ from rag_service.main import router as rag_router
 
 app = FastAPI(title="Legal RAG API")
 
-# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  

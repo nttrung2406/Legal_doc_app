@@ -1,6 +1,6 @@
-fastapi>=0.68.0
-uvicorn>=0.15.0
-python-jose[cryptography]
+fastapi
+uvicorn
+python-jose
 python-multipart
 python-keycloak
 requests
@@ -13,9 +13,9 @@ minio
 numpy
 sentence-transformers
 langchain
-chromadb
 python-docx
 PyPDF2
-passlib[bcrypt]
+passlib
 redis
 sqlalchemy
+paddlepaddle
